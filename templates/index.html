@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CNC File Sender</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #121212; color: #f0f0f0; }
+    .card, .form-control, .form-select {
+      background-color: #1e1e1e;
+      color: #f0f0f0;
+      border-color: #444;
+    }
+    .btn-primary, .btn-secondary, .btn-dark {
+      background-color: #333;
+      border-color: #555;
+    }
+    .btn-outline-secondary {
+      border-color: #888;
+      color: #ccc;
+    }
+    .list-group-item {
+      background-color: #1e1e1e;
+      border-color: #333;
+      color: #ddd;
+    }
+    .alert {
+      background-color: #2c2c2c;
+      border-color: #444;
+    }
+  </style>
+</head>
+<body class="container py-4">
+
+  <h1 class="mb-4">CNC File Sender</h1>
+    <p class="text-secondary">
+  <strong>Machine:</strong> {{ machine.name }} ({{ machine.manufacturer }})<br>
+  <strong>Model Number:</strong> {{ machine.model_number or 'N/A' }}<br>
+  <strong>Serial Number:</strong> {{ machine.serial_number or 'N/A' }}<br>
+  <strong>Software Version:</strong> {{ machine.software_version or 'N/A' }}
+
+</p>
+
+
+
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mb-3">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <form action="/" method="post" enctype="multipart/form-data" class="mb-4">
+    <div class="card p-3">
+      <h3>Upload File</h3>
+      <div class="mb-3">
+        <input type="file" name="file" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Upload</button>
+    </div>
+  </form>
+
+  <form action="/" method="post" class="mb-4">
+    <div class="card p-3">
+      <h3>Serial Settings</h3>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Baud Rate</label>
+          <select name="baudrate" class="form-select">
+            <option value="auto">Auto</option> <!-- Auto option -->
+            {% for rate in [9600, 19200, 38400, 57600, 115200] %}
+             <option value="{{ rate }}" {% if config.baudrate == rate %}selected{% endif %}>{{ rate }}</option>
+            {% endfor %}
+          </select>
+
+
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Data Bits</label>
+          <select name="bytesize" class="form-select">
+            {% for size in [5, 6, 7, 8] %}
+              <option value="{{ size }}" {% if config.bytesize == size %}selected{% endif %}>{{ size }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <form method="POST" class="mb-4">
+
+        <div class="col-md-3">
+          <label class="form-label">Parity</label>
+          <select name="parity" class="form-select">
+            {% for p in ['N', 'E', 'O'] %}
+              <option value="{{ p }}" {% if config.parity == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Stop Bits</label>
+          <select name="stopbits" class="form-select">
+            {% for stop in [1, 2] %}
+              <option value="{{ stop }}" {% if config.stopbits == stop %}selected{% endif %}>{{ stop }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="mt-3">
+        <button type="submit" class="btn btn-dark">Save Serial Settings</button>
+      </div>
+    </div>
+  </form>
+
+  <form method="POST" class="mb-4">
+    <div class="card p-3">
+      <h3>Machine Info</h3>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Machine Name</label>
+          <input type="text" name="machine_name" class="form-control" value="{{ machine.name }}" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Manufacturer</label>
+          <input type="text" name="manufacturer" class="form-control" value="{{ machine.manufacturer }}" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Polling Rate (sec)</label>
+          <input type="number" name="polling_rate" class="form-control" min="1" value="{{ machine.polling_rate or 5 }}">
+        </div>
+      </div>
+          <div class="mt-3">
+      <a href="{{ url_for('variable_config') }}" class="btn btn-outline-light">Configure Monitoring Variables</a>
+    </div>
+
+      <div class="mt-3">
+        <button type="submit" class="btn btn-dark">Save Machine Info</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="card p-3 mb-4">
+    <h3>Available Files</h3>
+    <ul class="list-group">
+      {% for file in files %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ file }}
+        <a href="{{ url_for('send', filename=file) }}" class="btn btn-sm btn-outline-secondary">Send to CNC</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card p-3">
+    <h3>Transfer Log</h3>
+    <div style="max-height: 300px; overflow-y: auto;">
+      <pre style="font-size: 0.9rem; white-space: pre-wrap;">{% for entry in log %}{{ entry }}{% endfor %}</pre>
+    </div>
+  </div>
+
+
+
+
+</body>
+</html>
