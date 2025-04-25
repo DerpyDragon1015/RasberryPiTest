@@ -1,139 +1,166 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Q600 Variable Configuration</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-duallistbox@4.0.1/dist/bootstrap-duallistbox.min.css" rel="stylesheet">
+  <!-- Local Bootstrap CSS -->
+  <link href="{{ url_for('static', filename='vendor/bootstrap/dist/css/bootstrap.min.css') }}" rel="stylesheet">
   <style>
     body {
       background-color: #121212;
       color: #f0f0f0;
-    }
-    .dual-listbox-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 2rem;
-      padding: 20px;
-    }
-    .dual-listbox {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    select {
-      width: 25vw;
-      height: 25vw;
-      background-color: #1e1e1e;
-      color: #f0f0f0;
-      border: 1px solid #444;
+      margin: 0;
+      padding: 1.5rem;
       font-size: 1rem;
     }
-    .listbox-controls {
+    .container {
+      max-width: 90vw;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    .controls {
       display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-bottom: 1rem;
       align-items: center;
     }
-    button {
-      width: 13%;
-      height: 100%;
-      font-size: 1.5rem;
-      background-color: #444;
-      border: none;
-      color: #fff;
+    .controls input[type="text"] {
+      flex: 1;
+      min-width: 12rem;
+      padding: 0.5rem;
+      background-color: #1e1e1e;
+      border: 1px solid #444;
+      color: #f0f0f0;
+    }
+    .controls button {
+      background-color: #333;
+      border-color: #555;
+      color: #f0f0f0;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #666;
+    details {
+      background-color: #1e1e1e;
+      border: 1px solid #444;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    summary {
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0.25rem 0;
+    }
+    .variables-list {
+      margin-top: 0.5rem;
+      padding-left: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+      gap: 0.25rem 1rem;
+    }
+    .variables-list label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    .variables-list input[type="checkbox"] {
+      margin-right: 0.5rem;
+      width: 1rem;
+      height: 1rem;
+    }
+    .btn-primary, .btn-secondary {
+      background-color: #333;
+      border-color: #555;
+      color: #f0f0f0;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
     }
   </style>
 </head>
-<body class="container py-5">
+<body>
+  <div class="container">
+    <h1>Configure Monitored Q600 Variables</h1>
+    <p class="text-secondary mb-3">Select categories and variables to monitor, then save.</p>
 
-  <h1 class="mb-4">Configure Monitored Q600 Variables</h1>
-  <p class="text-secondary">Select variables to monitor from the list and move them to the right using the arrows.</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-3">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="mb-3">
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <form method="POST">
+      <div class="controls">
+        <input type="text" id="filter" placeholder="Search variables...">
+        <button type="button" id="selectAll">Select All</button>
+        <button type="button" id="deselectAll">Deselect All</button>
+      </div>
+
+      {% set categories = {
+        'General machine status': ['Feed Timer', 'Tool in Spindle'],
+        'M30 counters': ['M30 Counter #1', 'M30 Counter #2'],
+        'ATM Group Info': ['ATM Group ID', 'ATM % Tool Life (All Tools)', 'ATM Tool Usage Count (All Tools)', 'ATM Hole Count (All Tools)', 'ATM Feed Time (All Tools)', 'ATM Total Time (All Tools)'],
+        'ATM Next Tool Info': ['ATM Next Tool Number', 'ATM % Tool Life (Next Tool)', 'ATM Usage Count (Next Tool)', 'ATM Hole Count (Next Tool)', 'ATM Feed Time (Next Tool)', 'ATM Total Time (Next Tool)'],
+        'ATM Tool Metadata': ['ATM Tool ID', 'ATM Tool Flutes', 'ATM Max Vibration', 'ATM Tool Length Offset', 'ATM Tool Length Wear', 'ATM Tool Diameter Offset', 'ATM Tool Diameter Wear', 'ATM Actual Diameter', 'ATM Coolant Position', 'ATM Tool Feed Timer', 'ATM Total Timer', 'ATM Life Limit', 'ATM Life Counter', 'ATM Load Monitor Max', 'ATM Load Limit'],
+        'Analog Inputs / Load Data': ['Max Axis Load (X–B)', 'Axis Load (C–T)', 'Raw Analog Inputs', 'Filtered Analog Inputs'],
+        'Tooling Ranges': ['Tool Flutes', 'Tool Vibrations', 'Tool Length Offsets', 'Tool Length Wear', 'Tool Diameter Offsets', 'Tool Diameter Wear'],
+        'Tool Timers & Monitoring': ['Tool Feed Timers', 'Tool Total Timers', 'Tool Life Limits', 'Tool Life Counters', 'Tool Load Monitor Max', 'Tool Load Monitor Limit']
+      } %}
+
+      {% for group, labels in categories.items() %}
+        <details open>
+          <summary>{{ group }}</summary>
+          <div class="variables-list">
+            {% for label in labels %}
+              <label title="{{ q600_variables[label][1] }}">
+                <input type="checkbox" name="q600_selected" value="{{ label }}" {% if label in selected_q600 %}checked{% endif %}>
+                {{ label }}
+              </label>
+            {% endfor %}
           </div>
-        {% endfor %}
+        </details>
+      {% endfor %}
+
+      <div class="d-flex justify-content-between">
+        <button type="submit" class="btn btn-primary">Save Configuration</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
       </div>
-    {% endif %}
-  {% endwith %}
+    </form>
+  </div>
 
-  <form method="POST">
-    <div class="dual-listbox-container">
-      <div class="dual-listbox">
-        <strong class="mb-1">Available</strong>
-        <select id="available" name="q600_available[]" multiple size="10">
-          {% for label, base in q600_variables.items() %}
-            {% if base|string not in selected_q600 %}
-              <option value="{{ base }}">{{ label }} ({{ base }})</option>
-            {% endif %}
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="listbox-controls">
-        <button type="button" class="btn btn-outline-light" id="moveRight">→</button>
-        <button type="button" class="btn btn-outline-light" id="moveLeft">←</button>
-      </div>
-
-      <div class="dual-listbox">
-        <strong class="mb-1">Selected</strong>
-        <select id="selected" name="q600_selected[]" multiple size="10">
-          {% for label, base in q600_variables.items() %}
-            {% if base|string in selected_q600 %}
-              <option value="{{ base }}" selected>{{ label }} ({{ base }})</option>
-            {% endif %}
-          {% endfor %}
-        </select>
-      </div>
-    </div>
-
-    <div class="d-flex justify-content-center">
-      <button type="submit" class="btn btn-primary">Save Configuration</button>
-    </div>
-    <div class="d-flex justify-content-center mt-2">
-      <a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
-    </div>
-  </form>
-
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap-duallistbox@4.0.1/dist/jquery.bootstrap-duallistbox.min.js"></script>
   <script>
-    // Initialize Bootstrap Dual Listbox
-    $(document).ready(function() {
-      $('select[name="q600_available[]"]').bootstrapDualListbox({
-        nonSelectedListLabel: 'Available Variables',
-        selectedListLabel: 'Selected Variables',
-        preserveSelectionOnMove: 'moved',
+    document.addEventListener('DOMContentLoaded', () => {
+      const filterInput = document.getElementById('filter');
+      const labels = document.querySelectorAll('.variables-list label');
+
+      filterInput.addEventListener('input', () => {
+        const term = filterInput.value.toLowerCase();
+        labels.forEach(label => {
+          label.style.display = label.textContent.toLowerCase().includes(term)
+            ? 'flex'
+            : 'none';
+        });
+      });
+
+      document.getElementById('selectAll').addEventListener('click', () => {
+        document.querySelectorAll('.variables-list input[type="checkbox"]').forEach(cb => cb.checked = true);
+      });
+
+      document.getElementById('deselectAll').addEventListener('click', () => {
+        document.querySelectorAll('.variables-list input[type="checkbox"]').forEach(cb => cb.checked = false);
       });
     });
-
-    // JavaScript to handle arrow button moves for multiple selections
-    document.getElementById('moveRight').addEventListener('click', function() {
-      let selectedOptions = document.getElementById('available').selectedOptions;
-      let selectedList = document.getElementById('selected');
-      for (let option of selectedOptions) {
-        selectedList.appendChild(option);
-      }
-    });
-
-    document.getElementById('moveLeft').addEventListener('click', function() {
-      let selectedOptions = document.getElementById('selected').selectedOptions;
-      let availableList = document.getElementById('available');
-      for (let option of selectedOptions) {
-        availableList.appendChild(option);
-      }
-    });
   </script>
-
 </body>
 </html>

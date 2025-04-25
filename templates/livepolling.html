@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Polling</title>
+  <!-- Local Bootstrap CSS -->
+  <link href="{{ url_for('static', filename='vendor/bootstrap/dist/css/bootstrap.min.css') }}" rel="stylesheet">
+  <style>
+    body { background: #121212; color: #f0f0f0; }
+    .container { padding: 2rem; max-width: 95vw; }
+    h1, h3 { color: #ffffff; }
+    .card { background: #2a2a2a; border-color: #555; margin-bottom: 1rem; }
+    .table thead th { background: #3a3a3a; color: #ffffff; }
+    .table tbody td { background: #1e1e1e; color: #e0e0e0; }
+    th, td { padding: 0.75rem; }
+    table { width: 100%; border-collapse: collapse; }
+  </style>
+</head>
+<body>
+  <div class="container">
+   <h1>Live Polling</h1>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-light mb-3">← Back</a>
+    <p class="text-secondary">…</p>
+  </div>
+    <p class="text-secondary">
+      <strong>Machine:</strong> {{ machine.name }} ({{ machine.manufacturer }})<br>
+      <strong>Model:</strong> {{ machine.model_number or 'N/A' }},
+      <strong>Serial:</strong> {{ machine.serial_number or 'N/A' }}<br>
+      <strong>SW:</strong> {{ machine.software_version or 'N/A' }}
+    </p>
+
+    <div class="card p-3">
+      <h3>Static Commands</h3>
+      <div class="table-responsive">
+        <table class="table table-borderless">
+          <thead>
+            <tr>
+              <th>Tag</th>
+              <th>Command</th>
+              <th>Latest Value</th>
+              <th>Last Polled</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cmd, tag in static_commands.items() %}
+              {% set entry = latest_readings.get(tag, {}) %}
+              <tr>
+                <td>{{ tag }}</td>
+                <td>{{ cmd }}</td>
+                <td>{{ entry.get('value', '—') }}</td>
+                <td>{{ entry.get('timestamp', '—')[:19] }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card p-3">
+      <h3>Dynamic Commands</h3>
+      <div class="table-responsive">
+        <table class="table table-borderless">
+          <thead>
+            <tr>
+              <th>Tag</th>
+              <th>Command</th>
+              <th>Latest Value</th>
+              <th>Last Polled</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cmd, tag in dynamic_commands.items() %}
+              {% set entry = latest_readings.get(tag, {}) %}
+              <tr>
+                <td>{{ tag }}</td>
+                <td>{{ cmd }}</td>
+                <td>{{ entry.get('value', '—') }}</td>
+                <td>{{ entry.get('timestamp', '—')[:19] }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  <!-- Local JS -->
+  <script src="{{ url_for('static', filename='vendor/jquery/dist/jquery.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

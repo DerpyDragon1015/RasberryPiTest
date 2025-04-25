@@ -1,9 +1,10 @@
-
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>CNC File Sender</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Local Bootstrap CSS -->
+  <link href="{{ url_for('static', filename='vendor/bootstrap/dist/css/bootstrap.min.css') }}" rel="stylesheet">
   <style>
     body { background-color: #121212; color: #f0f0f0; }
     .card, .form-control, .form-select {
@@ -15,7 +16,7 @@
       background-color: #333;
       border-color: #555;
     }
-    .btn-outline-secondary {
+    .btn-outline-secondary, .btn-outline-light {
       border-color: #888;
       color: #ccc;
     }
@@ -27,22 +28,19 @@
     .alert {
       background-color: #2c2c2c;
       border-color: #444;
+      color: #f0f0f0 !important;   /* force white text */
     }
+
   </style>
 </head>
 <body class="container py-4">
-
   <h1 class="mb-4">CNC File Sender</h1>
-    <p class="text-secondary">
-  <strong>Machine:</strong> {{ machine.name }} ({{ machine.manufacturer }})<br>
-  <strong>Model Number:</strong> {{ machine.model_number or 'N/A' }}<br>
-  <strong>Serial Number:</strong> {{ machine.serial_number or 'N/A' }}<br>
-  <strong>Software Version:</strong> {{ machine.software_version or 'N/A' }}
-
-</p>
-
-
-
+  <p class="text-secondary">
+    <strong>Machine:</strong> {{ machine.name }} ({{ machine.manufacturer }})<br>
+    <strong>Model Number:</strong> {{ machine.model_number or 'N/A' }}<br>
+    <strong>Serial Number:</strong> {{ machine.serial_number or 'N/A' }}<br>
+    <strong>Software Version:</strong> {{ machine.software_version or 'N/A' }}
+  </p>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -57,6 +55,7 @@
     {% endif %}
   {% endwith %}
 
+  <!-- File Upload -->
   <form action="/" method="post" enctype="multipart/form-data" class="mb-4">
     <div class="card p-3">
       <h3>Upload File</h3>
@@ -67,6 +66,7 @@
     </div>
   </form>
 
+  <!-- Serial Settings -->
   <form action="/" method="post" class="mb-4">
     <div class="card p-3">
       <h3>Serial Settings</h3>
@@ -74,13 +74,11 @@
         <div class="col-md-3">
           <label class="form-label">Baud Rate</label>
           <select name="baudrate" class="form-select">
-            <option value="auto">Auto</option> <!-- Auto option -->
+            <option value="auto">Auto</option>
             {% for rate in [9600, 19200, 38400, 57600, 115200] %}
-             <option value="{{ rate }}" {% if config.baudrate == rate %}selected{% endif %}>{{ rate }}</option>
+              <option value="{{ rate }}" {% if config.baudrate == rate %}selected{% endif %}>{{ rate }}</option>
             {% endfor %}
           </select>
-
-
         </div>
         <div class="col-md-3">
           <label class="form-label">Data Bits</label>
@@ -90,12 +88,10 @@
             {% endfor %}
           </select>
         </div>
-        <form method="POST" class="mb-4">
-
         <div class="col-md-3">
           <label class="form-label">Parity</label>
           <select name="parity" class="form-select">
-            {% for p in ['N', 'E', 'O'] %}
+            {% for p in ['None','Even','Odd'] %}
               <option value="{{ p }}" {% if config.parity == p %}selected{% endif %}>{{ p }}</option>
             {% endfor %}
           </select>
@@ -115,7 +111,8 @@
     </div>
   </form>
 
-  <form method="POST" class="mb-4">
+  <!-- Machine Info -->
+  <form action="/" method="post" class="mb-4">
     <div class="card p-3">
       <h3>Machine Info</h3>
       <div class="row g-3">
@@ -132,28 +129,131 @@
           <input type="number" name="polling_rate" class="form-control" min="1" value="{{ machine.polling_rate or 5 }}">
         </div>
       </div>
-          <div class="mt-3">
-      <a href="{{ url_for('variable_config') }}" class="btn btn-outline-light">Configure Monitoring Variables</a>
-    </div>
-
-      <div class="mt-3">
+      <div class="mt-3 d-flex gap-2">
         <button type="submit" class="btn btn-dark">Save Machine Info</button>
+        <a href="{{ url_for('variable_config') }}" class="btn btn-outline-secondary">Configure Monitoring Variables</a>
+        <a href="{{ url_for('livepolling') }}" class="btn btn-outline-secondary">Live Polling</a>
       </div>
     </div>
   </form>
 
+  <!-- Logging Settings -->
+  <form action="/" method="post" class="mb-4">
+    <div class="card p-3">
+      <h3>Logging Settings</h3>
+
+      <!-- Backend -->
+      <div class="mb-3">
+        <label class="form-label">Backend</label>
+        <div>
+          <label class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="log_backend" id="logSql" value="sql"
+              {% if log_config.backend=='sql' %}checked{% endif %}>
+            <span class="form-check-label">SQL Server</span>
+          </label>
+          <label class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="log_backend" id="logSheet" value="sheet"
+              {% if log_config.backend=='sheet' %}checked{% endif %}>
+            <span class="form-check-label">Google Sheet</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- SQL details -->
+      <div class="mb-3" id="sqlSettings" {% if log_config.backend!='sql' %}style="display:none"{% endif %}>
+        <label class="form-label">Connection String</label>
+        <input type="text" name="sql_conn" class="form-control"
+               value="{{ log_config.sql_conn or '' }}"
+               placeholder="Driver={ODBC Driver 17 for SQL Server};Server=...">
+      </div>
+
+      <!-- Sheet details -->
+      <div class="mb-3" id="sheetSettings" {% if log_config.backend!='sheet' %}style="display:none"{% endif %}>
+        <label class="form-label">Google Sheet ID</label>
+        <input type="text" name="sheet_id" class="form-control"
+               value="{{ log_config.sheet_id or '' }}"
+               placeholder="Sheet ID from its URL">
+      </div>
+
+
+      <div class="mt-3">
+        <button type="submit" class="btn btn-dark">Save Logging Settings</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Add Machine Tab -->
+  <form action="{{ url_for('add_machine') }}" method="post" class="mb-4">
+    <div class="mb-2">
+      <label for="machineName" class="form-label">Worksheet Name</label>
+      <input
+        type="text"
+        id="machineName"
+        name="machine_name"
+        class="form-control"
+        value="{{ machine.name }}"
+        {{ 'readonly' if has_tab }}
+        required
+      >
+    </div>
+
+    {% if has_tab %}
+      <div class="alert alert-success text-white fw-bold py-1">
+        A tab named “{{ machine.name }}” already exists.
+      </div>
+    {% endif %}
+
+    <button
+      class="btn btn-outline-light"
+      type="submit"
+      {{ 'disabled' if has_tab }}
+    >
+      {{ 'Add Machine Tab' if not has_tab else 'Tab Exists' }}
+    </button>
+  </form>
+
+  <script>
+    document.querySelectorAll('input[name="log_backend"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const sql  = radio.value === 'sql';
+        const sht  = radio.value === 'sheet';
+        document.getElementById('sqlSettings').style.display   = sql  ? 'block' : 'none';
+        document.getElementById('sheetSettings').style.display = sht  ? 'block' : 'none';
+      });
+    });
+  </script>
+
+  <!-- Available Files -->
   <div class="card p-3 mb-4">
-    <h3>Available Files</h3>
-    <ul class="list-group">
-      {% for file in files %}
+  <h3>Available Files</h3>
+  <ul class="list-group">
+    {% for file in files %}
       <li class="list-group-item d-flex justify-content-between align-items-center">
         {{ file }}
-        <a href="{{ url_for('send', filename=file) }}" class="btn btn-sm btn-outline-secondary">Send to CNC</a>
+        <div class="btn-group" role="group">
+          <!-- Send button -->
+          <a href="{{ url_for('send', filename=file) }}"
+             class="btn btn-sm btn-outline-secondary">
+             Send
+          </a>
+          <!-- Delete button -->
+          <form method="post"
+                action="{{ url_for('delete_file', filename=file) }}"
+                style="display:inline;">
+            <button type="submit"
+                    class="btn btn-sm btn-outline-danger"
+                    onclick="return confirm('Delete {{ file }}?');">
+                    Delete
+            </button>
+          </form>
+        </div>
       </li>
-      {% endfor %}
-    </ul>
-  </div>
+    {% endfor %}
+  </ul>
+</div>
 
+
+  <!-- Transfer Log -->
   <div class="card p-3">
     <h3>Transfer Log</h3>
     <div style="max-height: 300px; overflow-y: auto;">
@@ -161,8 +261,8 @@
     </div>
   </div>
 
-
-
-
+  <!-- Local scripts -->
+  <script src="{{ url_for('static', filename='vendor/jquery/dist/jquery.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
 </body>
 </html>

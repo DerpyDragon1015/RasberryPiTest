@@ -3,14 +3,21 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="589d25e3-bd77-41ef-af9b-df7dbde882ff" name="192.168.0.192">
-        <fileTransfer rootFolder="/home/Admin" accessType="SFTP" host="192.168.0.136" port="22" sshConfigId="3c090d0a-cb14-4730-8319-1144186a38f6" sshConfig="Admin@192.168.0.136:22 password">
+        <fileTransfer rootFolder="/home/Admin" accessType="SFTP" host="192.168.0.78" port="22" sshConfigId="3c090d0a-cb14-4730-8319-1144186a38f6" sshConfig="Admin@192.168.0.78:22 password">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
         </fileTransfer>
       </webServer>
       <webServer id="ba3beecf-5f0e-4795-990a-82d1d17c35dd" name="192.168.0.136">
-        <fileTransfer rootFolder="/home/Admin" accessType="SFTP" host="192.168.0.136" port="22" sshConfigId="3c090d0a-cb14-4730-8319-1144186a38f6" sshConfig="Admin@192.168.0.136:22 password">
+        <fileTransfer rootFolder="/home/Admin" accessType="SFTP" host="192.168.0.78" port="22" sshConfigId="3c090d0a-cb14-4730-8319-1144186a38f6" sshConfig="Admin@192.168.0.78:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="5a1e4534-8e34-4251-9e8d-6ef20d7afdc6" name="192.168.0.78">
+        <fileTransfer rootFolder="/home/Admin" accessType="SFTP" host="192.168.0.78" port="22" sshConfigId="3c090d0a-cb14-4730-8319-1144186a38f6" sshConfig="Admin@192.168.0.78:22 password">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
