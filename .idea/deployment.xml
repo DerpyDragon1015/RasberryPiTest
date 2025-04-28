@@ -17,6 +17,13 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="192.168.0.20">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/cnc_web" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="192.168.0.78">
         <serverdata>
           <mappings>

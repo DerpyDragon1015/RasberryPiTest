@@ -66,6 +66,87 @@
     </div>
   </form>
 
+  <div class="card p-3 mb-4">
+  <h3>Available Files</h3>
+  <ul class="list-group">
+  {% for file in files %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div>
+        <strong>{{ file.filename }}</strong><br>
+        <small class="text-secondary">Program: {{ file.program }}</small>
+      </div>
+      <div class="btn-group">
+        <a href="{{ url_for('send', filename=file.filename) }}"
+           class="btn btn-sm btn-outline-secondary">Send</a>
+        <form action="{{ url_for('delete_file', filename=file.filename) }}"
+              method="post" style="display:inline;">
+          <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+      </div>
+    </li>
+  {% endfor %}
+</ul>
+</div>
+
+  <!-- Transfer Log -->
+  <div class="card p-3 mb-4">
+    <h3>Transfer Log</h3>
+    <div style="max-height: 300px; overflow-y: auto;">
+      <pre style="font-size: 0.9rem; white-space: pre-wrap;">{% for entry in log %}{{ entry }}{% endfor %}</pre>
+    </div>
+  </div>
+
+
+  <form action="/" method="post" class="mb-4">
+  <div class="card p-3">
+    <h3>Network Settings</h3>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="useDHCP" name="use_dhcp"
+             {% if net_cfg.use_dhcp %}checked{% endif %}>
+      <label class="form-check-label" for="useDHCP">Use DHCP</label>
+    </div>
+
+    <div id="staticSettings" {% if net_cfg.use_dhcp %}style="display:none"{% endif %}>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">IP Address</label>
+          <input type="text" name="ip_address" class="form-control"
+                 value="{{ net_cfg.address }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Netmask (CIDR)</label>
+          <input type="text" name="netmask" class="form-control"
+                 value="{{ net_cfg.netmask }}" placeholder="e.g. 24">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Gateway</label>
+          <input type="text" name="gateway" class="form-control"
+                 value="{{ net_cfg.gateway }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">DNS Server</label>
+          <input type="text" name="dns" class="form-control"
+                 value="{{ net_cfg.dns }}">
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" name="network_submit" class="btn btn-dark mt-3">
+      Save Network Settings
+    </button>
+  </div>
+</form>
+
+<script>
+  document.getElementById('useDHCP').addEventListener('change', function(){
+    document.getElementById('staticSettings').style.display =
+      this.checked ? 'none' : 'block';
+  });
+</script>
+
+
+
   <!-- Serial Settings -->
   <form action="/" method="post" class="mb-4">
     <div class="card p-3">
@@ -223,43 +304,11 @@
     });
   </script>
 
-  <!-- Available Files -->
-  <div class="card p-3 mb-4">
-  <h3>Available Files</h3>
-  <ul class="list-group">
-    {% for file in files %}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        {{ file }}
-        <div class="btn-group" role="group">
-          <!-- Send button -->
-          <a href="{{ url_for('send', filename=file) }}"
-             class="btn btn-sm btn-outline-secondary">
-             Send
-          </a>
-          <!-- Delete button -->
-          <form method="post"
-                action="{{ url_for('delete_file', filename=file) }}"
-                style="display:inline;">
-            <button type="submit"
-                    class="btn btn-sm btn-outline-danger"
-                    onclick="return confirm('Delete {{ file }}?');">
-                    Delete
-            </button>
-          </form>
-        </div>
-      </li>
-    {% endfor %}
-  </ul>
-</div>
 
 
-  <!-- Transfer Log -->
-  <div class="card p-3">
-    <h3>Transfer Log</h3>
-    <div style="max-height: 300px; overflow-y: auto;">
-      <pre style="font-size: 0.9rem; white-space: pre-wrap;">{% for entry in log %}{{ entry }}{% endfor %}</pre>
-    </div>
-  </div>
+
+
+
 
   <!-- Local scripts -->
   <script src="{{ url_for('static', filename='vendor/jquery/dist/jquery.min.js') }}"></script>

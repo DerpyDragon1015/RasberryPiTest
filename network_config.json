@@ -1,0 +1,16 @@
+{
+  "wired": {
+    "use_dhcp": true,
+    "address": "",
+    "netmask": "",
+    "gateway": "",
+    "dns": ""
+  },
+  "wireless": {
+    "use_dhcp": true,
+    "address": "",
+    "netmask": "",
+    "gateway": "",
+    "dns": ""
+  }
+}
